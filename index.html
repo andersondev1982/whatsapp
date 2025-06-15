@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Links para WhatsApp</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e9f4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            overflow: auto;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            margin: 50px 0;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: white;
+            color: black;
+        }
+
+        button {
+            background-color: #25d366;
+            color: white;
+            font-size: 18px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 50px;
+        }
+
+        button:hover {
+            background-color: #128c7e;
+        }
+
+        .link-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .generated-link {
+            color: #25d366;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 16px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .generated-link:hover {
+            text-decoration: underline;
+        }
+
+        .notification {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+            display: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .qrcode-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #qrcode {
+            margin-top: 10px;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Gerador de Links WhatsApp</h1>
+
+    <form id="linkForm">
+        <label for="whatsappNumber">Número do WhatsApp:</label>
+        <input type="text" id="whatsappNumber" placeholder="Ex: 11988884444" required>
+
+        <label for="message">Mensagem Inicial (opcional):</label>
+        <textarea id="message" placeholder="Ex: Quero saber mais sobre o produto..." rows="4"></textarea>
+
+        <label for="campaign">Campanha (opcional):</label>
+        <input type="text" id="campaign" placeholder="Ex: Campanha de Lançamento">
+
+        <label for="utm_source">UTM Source (opcional):</label>
+        <input type="text" id="utm_source" placeholder="Ex: whatsapp">
+
+        <label for="utm_medium">UTM Medium (opcional):</label>
+        <input type="text" id="utm_medium" placeholder="Ex: link">
+
+        <label for="utm_campaign">UTM Campaign (opcional):</label>
+        <input type="text" id="utm_campaign" placeholder="Ex: ana_apartamento">
+
+        <button type="submit">Gerar Link</button>
+    </form>
+
+    <div class="notification" id="notification">
+        Link Criado!
+    </div>
+
+    <div class="link-container" id="generatedLinkContainer">
+        <!-- Link gerado será exibido aqui -->
+    </div>
+
+    <div class="qrcode-container" id="qrcodeContainer">
+        <canvas id="qrcode"></canvas> <!-- Canvas para exibir o QR Code -->
+    </div>
+</div>
+
+<script>
+    document.getElementById('linkForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const whatsappNumber = document.getElementById('whatsappNumber').value.replace(/\D/g, ''); // Remove qualquer caractere não numérico
+        const message = document.getElementById('message').value;
+        const campaign = document.getElementById('campaign').value;
+        const utmSource = document.getElementById('utm_source').value;
+        const utmMedium = document.getElementById('utm_medium').value;
+        const utmCampaign = document.getElementById('utm_campaign').value;
+
+        let link = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+        // Adicionar parâmetros UTM apenas se preenchidos
+        let utmParams = [];
+        if (utmSource) utmParams.push(`utm_source=${encodeURIComponent(utmSource)}`);
+        if (utmMedium) utmParams.push(`utm_medium=${encodeURIComponent(utmMedium)}`);
+        if (utmCampaign) utmParams.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`);
+
+        if (utmParams.length > 0) {
+            link += '&' + utmParams.join('&');
+        }
+
+        // Exibe o link gerado
+        const linkContainer = document.getElementById('generatedLinkContainer');
+        linkContainer.innerHTML = `
+            <p>Clique no link abaixo para iniciar a conversa:</p>
+            <a href="${link}" target="_blank" class="generated-link">Iniciar conversa no WhatsApp</a>
+        `;
+
+        // Copiar o link gerado automaticamente para a área de transferência
+        navigator.clipboard.writeText(link).then(() => {
+            // Exibe a notificação de "Link Criado"
+            const notification = document.getElementById('notification');
+            notification.style.display = 'block';
+            
+            // Remove a notificação após 3 segundos
+            setTimeout(function() {
+                notification.style.display = 'none';
+            }, 3000);
+        }).catch(err => {
+            console.error('Erro ao copiar o link: ', err);
+        });
+
+        // Gerar o QR Code para o link
+        const qrcodeContainer = document.getElementById('qrcode');
+        QRCode.toCanvas(qrcodeContainer, link, function (error) {
+            if (error) {
+                console.error('Erro ao gerar o QR Code:', error);
+            }
+        });
+
+        // Enviar o link gerado e os parâmetros para o n8n via Webhook POST
+        fetch('https://editorn8n.clickmaxagency.com/webhook-test/qrdoce', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                whatsappLink: link, // Envia o link gerado
+                campaignName: campaign,  // Envia o nome da campanha
+                utmSource: utmSource,    // Envia o parâmetro utm_source
+                utmMedium: utmMedium,    // Envia o parâmetro utm_medium
+                utmCampaign: utmCampaign // Envia o parâmetro utm_campaign
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Link e parâmetros UTM enviados para o n8n:', data);
+        })
+        .catch((error) => {
+            console.error('Erro ao enviar os dados para o n8n:', error);
+        });
+    });
+</script>
+
+</body>
+</html>
